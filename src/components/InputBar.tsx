@@ -411,6 +411,7 @@ export default function InputBar() {
   const filterStatus = useStore((s) => s.filterStatus)
   const filterFavorite = useStore((s) => s.filterFavorite)
   const searchQuery = useStore((s) => s.searchQuery)
+  const promptInputFocusRequestId = useStore((s) => s.promptInputFocusRequestId)
 
   const filteredTasks = useMemo(() => {
     const sorted = [...tasks].sort((a, b) => b.createdAt - a.createdAt)
@@ -1305,6 +1306,27 @@ export default function InputBar() {
   useEffect(() => {
     adjustTextareaHeight()
   }, [prompt, inputImages, adjustTextareaHeight])
+
+  useEffect(() => {
+    if (promptInputFocusRequestId <= 0) return
+
+    setMobileCollapsed(false)
+    const frame = window.requestAnimationFrame(() => {
+      const el = textareaRef.current
+      const bar = cardRef.current?.closest<HTMLElement>('[data-input-bar]')
+      bar?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      if (!el) return
+
+      el.focus({ preventScroll: true })
+      const endOffset = el.textContent?.length ?? prompt.length
+      setContentEditableCursor(el, endOffset)
+      setCursorPos(endOffset)
+      syncMentionTagSelection(el)
+      adjustTextareaHeight()
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [adjustTextareaHeight, prompt.length, promptInputFocusRequestId])
 
   // 监听 selectionchange 以在光标移动时更新位置（contentEditable 的 onSelect 不可靠）
   useEffect(() => {

@@ -119,6 +119,21 @@ export const DEFAULT_PARAMS: TaskParams = {
   n: 1,
 }
 
+// ===== Prompt 模板 =====
+
+export interface PromptTemplate {
+  id: string
+  title: string
+  description?: string
+  prompt: string
+  coverImageUrl?: string
+  tags?: string[]
+  category?: string
+  params?: Partial<TaskParams>
+  providerHint?: string
+  sortOrder?: number
+}
+
 // ===== 输入图片（UI 层面） =====
 
 export interface InputImage {

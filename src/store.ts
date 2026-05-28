@@ -9,6 +9,7 @@ import type {
   AppSettings,
   AppMode,
   TaskParams,
+  PromptTemplate,
   InputImage,
   MaskDraft,
   TaskRecord,
@@ -722,6 +723,9 @@ interface AppState {
   maskEditorImageId: string | null
   setMaskEditorImageId: (id: string | null) => void
   galleryInputDraft: AgentInputDraft | null
+  promptInputFocusRequestId: number
+  requestPromptInputFocus: () => void
+  applyPromptTemplate: (template: PromptTemplate) => void
 
   // 参数
   params: TaskParams
@@ -1248,6 +1252,21 @@ export const useStore = create<AppState>()(
         set((s) => syncActiveInputDraft(s, { maskEditorImageId }))
       },
       galleryInputDraft: null,
+      promptInputFocusRequestId: 0,
+      requestPromptInputFocus: () => set((state) => ({
+        promptInputFocusRequestId: state.promptInputFocusRequestId + 1,
+      })),
+      applyPromptTemplate: (template) => {
+        const state = get()
+        state.setAppMode('gallery')
+        state.setReusedTaskApiProfile(null)
+        state.clearInputImages()
+        state.clearMaskDraft()
+        state.setMaskEditorImageId(null)
+        state.setParams({ ...DEFAULT_PARAMS, ...(template.params ?? {}) })
+        state.setPrompt(template.prompt)
+        state.requestPromptInputFocus()
+      },
 
       // Params
       params: { ...DEFAULT_PARAMS },

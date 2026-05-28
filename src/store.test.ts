@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { strToU8, zipSync } from 'fflate'
 import { DEFAULT_PARAMS } from './types'
 import { createDefaultFalProfile, createDefaultOpenAIProfile, DEFAULT_RESPONSES_MODEL, DEFAULT_SETTINGS, normalizeSettings } from './lib/apiProfiles'
-import type { AgentConversation, ExportData, StoredImage, StoredImageThumbnail, TaskRecord } from './types'
+import type { AgentConversation, ExportData, PromptTemplate, StoredImage, StoredImageThumbnail, TaskRecord } from './types'
 import { getSelectedImageMentionLabel } from './lib/promptImageMentions'
 vi.mock('./lib/db', () => {
   const tasks = new Map<string, TaskRecord>()
@@ -224,6 +224,78 @@ describe('mask draft lifecycle in store actions', () => {
     const state = useStore.getState()
     expect(state.inputImages.map((img) => img.id)).toEqual([replacement.id, imageB.id])
     expect(state.prompt).toBe(prompt)
+  })
+})
+
+describe('prompt template store action', () => {
+  beforeEach(() => {
+    useStore.setState({
+      settings: { ...DEFAULT_SETTINGS },
+      appMode: 'gallery',
+      prompt: 'previous gallery prompt',
+      inputImages: [imageA],
+      maskDraft: { targetImageId: imageA.id, maskDataUrl: 'data:image/png;base64,mask', updatedAt: 1 },
+      maskEditorImageId: imageA.id,
+      galleryInputDraft: null,
+      agentConversations: [],
+      activeAgentConversationId: null,
+      agentInputDrafts: {},
+      params: { ...DEFAULT_PARAMS, output_format: 'webp', n: 3 },
+      reusedTaskApiProfileId: 'old-profile',
+      reusedTaskApiProfileName: '旧配置',
+      reusedTaskApiProfileMissing: true,
+      promptInputFocusRequestId: 0,
+    })
+  })
+
+  it('applies a remote template into the gallery draft and requests input focus', () => {
+    const template: PromptTemplate = {
+      id: 'template-a',
+      title: '产品摄影',
+      prompt: '生成一张高端产品摄影图',
+      params: { quality: 'high', n: 2 },
+    }
+
+    useStore.getState().applyPromptTemplate(template)
+
+    const state = useStore.getState()
+    expect(state.appMode).toBe('gallery')
+    expect(state.prompt).toBe(template.prompt)
+    expect(state.galleryInputDraft?.prompt).toBe(template.prompt)
+    expect(state.inputImages).toEqual([])
+    expect(state.maskDraft).toBeNull()
+    expect(state.maskEditorImageId).toBeNull()
+    expect(state.reusedTaskApiProfileId).toBeNull()
+    expect(state.reusedTaskApiProfileName).toBeNull()
+    expect(state.reusedTaskApiProfileMissing).toBe(false)
+    expect(state.params).toEqual({ ...DEFAULT_PARAMS, quality: 'high', n: 2 })
+    expect(state.promptInputFocusRequestId).toBe(1)
+  })
+
+  it('preserves the active agent draft when applying a template from agent mode', () => {
+    const conversation = agentConversation({ id: 'conversation-template' })
+    useStore.setState({
+      appMode: 'agent',
+      agentConversations: [conversation],
+      activeAgentConversationId: conversation.id,
+      prompt: 'agent draft prompt',
+      inputImages: [],
+      maskDraft: null,
+      maskEditorImageId: null,
+      galleryInputDraft: null,
+      agentInputDrafts: {},
+    })
+
+    useStore.getState().applyPromptTemplate({
+      id: 'template-b',
+      title: '插画',
+      prompt: '生成一张水彩插画',
+    })
+
+    const state = useStore.getState()
+    expect(state.appMode).toBe('gallery')
+    expect(state.prompt).toBe('生成一张水彩插画')
+    expect(state.agentInputDrafts[conversation.id]?.prompt).toBe('agent draft prompt')
   })
 })
 
