@@ -1,0 +1,50 @@
+---
+description: GPT Image Playground project conventions
+alwaysApply: true
+---
+
+# GPT Image Playground 项目规范
+
+## 项目定位
+
+- 这是 React 19 + TypeScript + Vite + Tailwind 的前端应用。
+- 主要功能是图片生成/编辑 Playground，支持画廊模式与 Agent 模式。
+- 数据默认存储在浏览器 IndexedDB，不依赖后端持久化服务。
+- 项目主仓库为 `https://github.com/sineom-1/img-template`，后续提交、推送与协作以该仓库为准。
+
+## 目录职责
+
+- `src/main.tsx`：应用启动、Service Worker 注册、移动端视口保护。
+- `src/App.tsx`：顶层布局、模式切换、全局弹窗与初始化逻辑。
+- `src/components/`：React UI 组件，优先保持组件职责单一。
+- `src/hooks/`：可复用 React hooks。
+- `src/lib/`：API、IndexedDB、图片处理、参数兼容等业务工具。
+- `src/store.ts`：Zustand 全局状态与主要业务流程。
+- `src/types.ts`：跨模块共享类型和默认参数。
+
+## 编码规范
+
+- 使用严格 TypeScript，优先显式建模核心业务类型。
+- 保持现有代码风格：无分号、单引号、函数式 React 组件。
+- 修改状态、任务、Agent、API 配置前，先检查 `src/types.ts` 和 `src/store.ts` 的影响范围。
+- 避免把大型流程继续塞进 UI 组件；复杂逻辑优先放入 `src/lib/` 或 hooks。
+- 不随意引入新依赖；确有必要时说明原因，并使用 npm 更新锁文件。
+
+## 数据与 API 注意事项
+
+- IndexedDB schema 在 `src/lib/db.ts`，升级 `DB_VERSION` 时必须考虑迁移兼容。
+- `dev-proxy.config.json` 是本地配置，已被忽略，不能提交。
+- API 请求入口优先走 `src/lib/api.ts`、`agentApi.ts` 和对应 provider 实现。
+- 不要在前端日志或持久化数据中暴露 API Key 等敏感信息。
+
+## UI 与交互
+
+- UI 改动遵循 Tailwind 现有设计语言，兼顾桌面端和移动端。
+- 涉及截图、设计参考、定价页、onboarding、设置页等 UI 设计时，先使用 Lazyweb 获取真实产品参考。
+- 弹窗、遮罩、Lightbox、移动端滚动等交互要检查背景滚动和 Escape 关闭行为。
+
+## 验证命令
+
+- 常规验证优先运行 `npm run test`。
+- 涉及类型、构建或 Vite 配置时运行 `npm run build`。
+- 本地开发使用 `npm run dev`，mock API 使用 `npm run mock:api`。
