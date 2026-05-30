@@ -74,18 +74,23 @@ export default function App() {
   return (
     <>
       <Header />
-      {appMode === 'agent' ? (
+      {appMode === 'home' ? (
+        <main data-home-main className="pb-16">
+          <div className="safe-area-x max-w-7xl mx-auto">
+            <PromptTemplateGallery />
+          </div>
+        </main>
+      ) : appMode === 'agent' ? (
         <AgentWorkspace />
       ) : (
         <main data-home-main data-drag-select-surface className="pb-48">
           <div className="safe-area-x max-w-7xl mx-auto">
-            <PromptTemplateGallery />
             <SearchBar />
             <TaskGrid />
           </div>
         </main>
       )}
-      <InputBar />
+      {appMode !== 'home' && <InputBar />}
       <DetailModal />
       <Lightbox />
       <SettingsModal />

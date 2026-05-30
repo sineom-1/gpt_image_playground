@@ -645,7 +645,7 @@ function mergePersistedState(persistedState: unknown, currentState: AppState): A
     typeof persisted.activeAgentConversationId === 'string' && (!hasPersistedAgentConversations || agentConversations.some((conversation) => conversation.id === persisted.activeAgentConversationId))
       ? persisted.activeAgentConversationId
       : agentConversations[0]?.id ?? null
-  const appMode = persisted.appMode === 'agent' ? 'agent' : 'gallery'
+  const appMode = persisted.appMode === 'agent' ? 'agent' : 'home'
   const galleryInputDraft = settings.persistInputOnRestart
     ? normalizeAgentInputDraft(persisted.galleryInputDraft ?? {
         prompt: persisted.prompt,
@@ -1024,7 +1024,7 @@ function syncActiveInputDraft<T extends Partial<AgentInputDraft>>(
       galleryInputDraft: isEmptyAgentInputDraft(draft) ? null : copyAgentInputDraft(draft),
     }
   }
-  if (!state.activeAgentConversationId) return patch
+  if (state.appMode !== 'agent' || !state.activeAgentConversationId) return patch
   return {
     ...patch,
     agentInputDrafts: setAgentInputDraft(state.agentInputDrafts, state.activeAgentConversationId, draft),
@@ -1049,7 +1049,7 @@ export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
       // Mode
-      appMode: 'gallery',
+      appMode: 'home',
       setAppMode: (appMode) => {
         if (appMode === 'gallery') {
           const state = get()
