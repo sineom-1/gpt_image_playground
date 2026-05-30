@@ -272,6 +272,21 @@ describe('prompt template store action', () => {
     expect(state.promptInputFocusRequestId).toBe(1)
   })
 
+  it('can return home after applying a prompt template', () => {
+    const template: PromptTemplate = {
+      id: 'template-home',
+      title: '首页模板',
+      prompt: '从首页模板进入编辑页',
+    }
+
+    useStore.getState().applyPromptTemplate(template)
+    useStore.getState().setAppMode('home')
+
+    const state = useStore.getState()
+    expect(state.appMode).toBe('home')
+    expect(state.galleryInputDraft?.prompt).toBe(template.prompt)
+  })
+
   it('preserves the active agent draft when applying a template from agent mode', () => {
     const conversation = agentConversation({ id: 'conversation-template' })
     useStore.setState({

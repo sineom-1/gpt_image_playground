@@ -1051,6 +1051,23 @@ export const useStore = create<AppState>()(
       // Mode
       appMode: 'home',
       setAppMode: (appMode) => {
+        if (appMode === 'home') {
+          const state = get()
+          const agentInputDrafts = saveActiveAgentInputDrafts(state)
+          const galleryInputDraft = saveGalleryInputDraft(state)
+          set((state) => ({
+            appMode,
+            agentInputDrafts,
+            galleryInputDraft,
+            agentMobileHeaderVisible: true,
+            selectedTaskIds: [],
+            agentEditingRoundId: null,
+            agentEditingConversationId: null,
+            ...(state.appMode === 'agent' ? restoreGalleryInputDraftState(galleryInputDraft) : {}),
+          }))
+          return
+        }
+
         if (appMode === 'gallery') {
           const state = get()
           const agentInputDrafts = saveActiveAgentInputDrafts(state)
