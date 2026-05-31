@@ -3,6 +3,8 @@ import { useStore } from '../store'
 import { useVersionCheck } from '../hooks/useVersionCheck'
 import { useTooltip } from '../hooks/useTooltip'
 import { dismissAllTooltips } from '../lib/tooltipDismiss'
+import { PRODUCT_NAME_BY_LANGUAGE } from '../lib/appLanguage'
+import type { AppLanguage } from '../types'
 import ViewportTooltip from './ViewportTooltip'
 import HelpModal from './HelpModal'
 import HistoryModal from './HistoryModal'
@@ -13,6 +15,56 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>
 }
 
+const headerCopy: Record<AppLanguage, {
+  home: string
+  gallery: string
+  agent: string
+  install: string
+  installIosMessage: string
+  installBrowserMessage: string
+  confirmText: string
+  guide: string
+  settings: string
+  history: string
+  newConversation: string
+  languageLabel: string
+  languageButton: string
+  pullHint: string
+}> = {
+  zh: {
+    home: '首页',
+    gallery: '画廊',
+    agent: 'Agent',
+    install: '安装为应用',
+    installIosMessage: '在 Safari 浏览器中，点击底部「分享」按钮，选择「添加到主屏幕」即可安装此应用。',
+    installBrowserMessage: '请在浏览器的菜单中选择「添加到主屏幕」或「安装应用」。\n\n（如果在微信等内置浏览器中，请先在外部浏览器打开）',
+    confirmText: '我知道了',
+    guide: '操作指南',
+    settings: '设置',
+    history: '历史记录',
+    newConversation: '新对话',
+    languageLabel: '切换为英文',
+    languageButton: 'EN',
+    pullHint: '列表顶部下拉展示顶栏',
+  },
+  en: {
+    home: 'Home',
+    gallery: 'Gallery',
+    agent: 'Agent',
+    install: 'Install app',
+    installIosMessage: 'In Safari, tap Share and choose Add to Home Screen to install this app.',
+    installBrowserMessage: 'Use your browser menu to choose Add to Home Screen or Install app.\n\nIf you are in an in-app browser, open this page in a regular browser first.',
+    confirmText: 'Got it',
+    guide: 'Guide',
+    settings: 'Settings',
+    history: 'History',
+    newConversation: 'New chat',
+    languageLabel: 'Switch to Chinese',
+    languageButton: '中',
+    pullHint: 'Pull down at the top to show the header',
+  },
+}
+
 function isInstalledPwa() {
   const nav = window.navigator as Navigator & { standalone?: boolean }
   return window.matchMedia('(display-mode: standalone)').matches || nav.standalone === true
@@ -21,6 +73,8 @@ function isInstalledPwa() {
 export default function Header() {
   const appMode = useStore((s) => s.appMode)
   const setAppMode = useStore((s) => s.setAppMode)
+  const uiLanguage = useStore((s) => s.uiLanguage)
+  const setUiLanguage = useStore((s) => s.setUiLanguage)
   const setShowSettings = useStore((s) => s.setShowSettings)
   const setConfirmDialog = useStore((s) => s.setConfirmDialog)
   const agentMobileHeaderVisible = useStore((s) => s.agentMobileHeaderVisible)
@@ -39,6 +93,9 @@ export default function Header() {
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const historyButtonRef = useRef<HTMLButtonElement>(null)
   const createConversation = useStore((s) => s.createAgentConversation)
+  const copy = headerCopy[uiLanguage]
+  const productName = PRODUCT_NAME_BY_LANGUAGE[uiLanguage]
+  const nextLanguage: AppLanguage = uiLanguage === 'zh' ? 'en' : 'zh'
 
   useEffect(() => {
     if (appMode === 'agent') {
@@ -122,19 +179,19 @@ export default function Header() {
       const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
       if (isIos) {
         setConfirmDialog({
-          title: '安装为应用',
-          message: '在 Safari 浏览器中，点击底部「分享」按钮，选择「添加到主屏幕」即可安装此应用。',
+          title: copy.install,
+          message: copy.installIosMessage,
           showCancel: false,
-          confirmText: '我知道了',
+          confirmText: copy.confirmText,
           icon: 'info',
           action: () => {},
         })
       } else {
         setConfirmDialog({
-          title: '安装为应用',
-          message: '请在浏览器的菜单中选择「添加到主屏幕」或「安装应用」。\n\n（如果在微信等内置浏览器中，请先在外部浏览器打开）',
+          title: copy.install,
+          message: copy.installBrowserMessage,
           showCancel: false,
-          confirmText: '我知道了',
+          confirmText: copy.confirmText,
           icon: 'info',
           action: () => {},
         })
@@ -152,9 +209,9 @@ export default function Header() {
                 href="https://github.com/CookSleep/gpt_image_playground"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[17px] sm:text-lg font-black tracking-tight text-gray-900 transition-colors hover:text-violet-600 dark:text-white dark:hover:text-cyan-200"
+                className="text-[16px] sm:text-lg font-black tracking-tight text-gray-900 transition-colors hover:text-violet-600 dark:text-white dark:hover:text-cyan-200"
               >
-                GPT Image Playground
+                {productName}
               </a>
               {hasUpdate && latestRelease && (
                 <a
@@ -175,7 +232,7 @@ export default function Header() {
                 type="button"
                 onClick={() => setShowHistoryModal((visible) => !visible)}
                 className="p-1.5 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.04] rounded-lg transition-colors"
-                title="历史记录"
+                title={copy.history}
               >
                 <HistoryIcon className="w-5 h-5" />
               </button>
@@ -186,7 +243,7 @@ export default function Header() {
                   createConversation()
                 }}
                 className="p-1.5 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.04] rounded-lg transition-colors"
-                title="新对话"
+                title={copy.newConversation}
               >
                 <EditIcon className="w-5 h-5" />
               </button>
@@ -218,24 +275,33 @@ export default function Header() {
               onClick={() => setAppMode('home')}
               className={`px-4 py-1.5 rounded-full text-sm transition-colors ${appMode === 'home' ? 'bg-gradient-to-r from-violet-500 to-cyan-400 text-white shadow-sm font-bold' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}
             >
-              首页
+              {copy.home}
             </button>
             <button
               type="button"
               onClick={() => setAppMode('gallery')}
               className={`px-4 py-1.5 rounded-full text-sm transition-colors ${appMode === 'gallery' ? 'bg-white text-gray-900 shadow-sm font-medium dark:bg-white/10 dark:text-white' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}
             >
-              画廊
+              {copy.gallery}
             </button>
             <button
               type="button"
               onClick={() => setAppMode('agent')}
               className={`px-4 py-1.5 rounded-full text-sm transition-colors ${appMode === 'agent' ? 'bg-white text-gray-900 shadow-sm font-medium dark:bg-white/10 dark:text-white' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}
             >
-              Agent
+              {copy.agent}
             </button>
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setUiLanguage(nextLanguage)}
+              className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-100"
+              aria-label={copy.languageLabel}
+              title={copy.languageLabel}
+            >
+              {copy.languageButton}
+            </button>
             {!isPwaInstalled && (
               <div
                 className="relative"
@@ -247,12 +313,12 @@ export default function Header() {
                     handleInstallClick()
                   }}
                   className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
-                  aria-label="安装为应用"
+                  aria-label={copy.install}
                 >
                   <InstallIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 </button>
                 <ViewportTooltip visible={installTooltip.visible} className="whitespace-nowrap">
-                  安装为应用
+                  {copy.install}
                 </ViewportTooltip>
               </div>
             )}
@@ -266,12 +332,12 @@ export default function Header() {
                   setShowHelp(true)
                 }}
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
-                aria-label="操作指南"
+                aria-label={copy.guide}
               >
                 <HelpCircleIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
               <ViewportTooltip visible={helpTooltip.visible} className="whitespace-nowrap">
-                操作指南
+                {copy.guide}
               </ViewportTooltip>
             </div>
             <div
@@ -281,12 +347,12 @@ export default function Header() {
               <button
                 onClick={() => setShowSettings(true)}
                 className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 transition-colors"
-                aria-label="设置"
+                aria-label={copy.settings}
               >
                 <SettingsIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </button>
               <ViewportTooltip visible={settingsTooltip.visible} className="whitespace-nowrap">
-                设置
+                {copy.settings}
               </ViewportTooltip>
             </div>
           </div>
@@ -298,21 +364,21 @@ export default function Header() {
               onClick={() => setAppMode('home')}
               className={`px-4 py-1.5 rounded-lg text-sm transition-colors ${appMode === 'home' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm font-medium' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}
             >
-              首页
+              {copy.home}
             </button>
             <button
               type="button"
               onClick={() => setAppMode('gallery')}
               className={`px-4 py-1.5 rounded-lg text-sm transition-colors ${appMode === 'gallery' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm font-medium' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}
             >
-              画廊
+              {copy.gallery}
             </button>
             <button
               type="button"
               onClick={() => setAppMode('agent')}
               className={`px-4 py-1.5 rounded-lg text-sm transition-colors ${appMode === 'agent' ? 'bg-white dark:bg-white/10 text-gray-900 dark:text-white shadow-sm font-medium' : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'}`}
             >
-              Agent
+              {copy.agent}
             </button>
           </div>
         </div>
@@ -321,7 +387,7 @@ export default function Header() {
       {/* Hint for sliding down */}
       <div className={`fixed top-0 left-0 right-0 z-30 flex justify-center pointer-events-none transition-all duration-300 ease-in-out sm:hidden ${appMode === 'agent' && hintVisible && !agentMobileHeaderVisible ? 'translate-y-[env(safe-area-inset-top,0px)] opacity-100' : '-translate-y-full opacity-0'}`}>
         <div className="bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-b-xl shadow-lg">
-          列表顶部下拉展示顶栏
+          {copy.pullHint}
         </div>
       </div>
 

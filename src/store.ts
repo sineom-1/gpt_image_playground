@@ -8,6 +8,7 @@ import type {
   ApiProfile,
   AppSettings,
   AppMode,
+  AppLanguage,
   TaskParams,
   PromptTemplate,
   InputImage,
@@ -17,7 +18,7 @@ import type {
   ResponsesApiResponse,
   ResponsesOutputItem,
 } from './types'
-import { DEFAULT_AGENT_MAX_TOOL_ROUNDS, DEFAULT_PARAMS } from './types'
+import { DEFAULT_AGENT_MAX_TOOL_ROUNDS, DEFAULT_APP_LANGUAGE, DEFAULT_PARAMS } from './types'
 import { DEFAULT_SETTINGS, getActiveApiProfile, getCustomProviderDefinition, mergeImportedSettings, normalizeSettings, validateApiProfile } from './lib/apiProfiles'
 import { dismissAllTooltips } from './lib/tooltipDismiss'
 import { remapImageMentionsForOrder, replaceImageMentionsForApi } from './lib/promptImageMentions'
@@ -50,6 +51,7 @@ import { getCustomQueuedImageResult } from './lib/openaiCompatibleImageApi'
 import { validateMaskMatchesImage } from './lib/canvasImage'
 import { orderInputImagesForMask } from './lib/mask'
 import { getChangedParams, normalizeParamsForSettings } from './lib/paramCompatibility'
+import { normalizeAppLanguage } from './lib/appLanguage'
 import { zipSync, unzipSync, strToU8, strFromU8 } from 'fflate'
 
 // ===== Image cache =====
@@ -604,6 +606,7 @@ export function getPersistedState(state: AppState) {
       : {}),
     dismissedCodexCliPrompts: state.dismissedCodexCliPrompts,
     appMode: state.appMode,
+    uiLanguage: state.uiLanguage,
     galleryInputDraft: settings.persistInputOnRestart && galleryInputDraft
       ? { ...galleryInputDraft, inputImages: galleryInputDraft.inputImages.map((img) => ({ id: img.id, dataUrl: '' })) }
       : null,
@@ -634,6 +637,7 @@ function mergePersistedState(persistedState: unknown, currentState: AppState): A
 
   const persisted = persistedState as Partial<AppState>
   const settings = normalizeSettings(persisted.settings ?? currentState.settings)
+  const uiLanguage = normalizeAppLanguage(persisted.uiLanguage)
   const hasPersistedAgentConversations = Array.isArray(persisted.agentConversations)
   if (hasPersistedAgentConversations && normalizeAgentConversations(persisted.agentConversations).length > 0) {
     agentConversationMigrationPending = true
@@ -676,6 +680,7 @@ function mergePersistedState(persistedState: unknown, currentState: AppState): A
     ...currentState,
     ...persisted,
     settings,
+    uiLanguage,
     appMode,
     galleryInputDraft: galleryInputDraft && !isEmptyAgentInputDraft(galleryInputDraft) ? galleryInputDraft : null,
     agentConversations,
@@ -700,6 +705,10 @@ interface AppState {
   // 模式
   appMode: AppMode
   setAppMode: (mode: AppMode) => void
+
+  // 语言
+  uiLanguage: AppLanguage
+  setUiLanguage: (language: AppLanguage) => void
 
   // 设置
   settings: AppSettings
@@ -1125,6 +1134,10 @@ export const useStore = create<AppState>()(
           },
         })
       },
+
+      // Language
+      uiLanguage: DEFAULT_APP_LANGUAGE,
+      setUiLanguage: (uiLanguage) => set({ uiLanguage }),
 
       // Settings
       settings: { ...DEFAULT_SETTINGS },

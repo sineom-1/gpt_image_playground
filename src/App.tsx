@@ -20,14 +20,22 @@ import MaskEditorModal from './components/MaskEditorModal'
 import ImageContextMenu from './components/ImageContextMenu'
 import SupportPromptModal from './components/SupportPromptModal'
 import { useGlobalClickSuppression } from './lib/clickSuppression'
+import { DOCUMENT_LANG_BY_LANGUAGE, DOCUMENT_TITLE_BY_LANGUAGE, PRODUCT_NAME_BY_LANGUAGE } from './lib/appLanguage'
 
 let customProviderConfigUrlImportStarted = false
 
 export default function App() {
   const setSettings = useStore((s) => s.setSettings)
   const appMode = useStore((s) => s.appMode)
+  const uiLanguage = useStore((s) => s.uiLanguage)
   useDockerApiUrlMigrationNotice()
   useGlobalClickSuppression()
+
+  useEffect(() => {
+    document.documentElement.lang = DOCUMENT_LANG_BY_LANGUAGE[uiLanguage]
+    document.title = DOCUMENT_TITLE_BY_LANGUAGE[uiLanguage]
+    document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute('content', PRODUCT_NAME_BY_LANGUAGE[uiLanguage])
+  }, [uiLanguage])
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search)

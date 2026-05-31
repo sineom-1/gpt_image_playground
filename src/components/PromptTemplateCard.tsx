@@ -1,4 +1,5 @@
 import type { PromptTemplate } from '../types'
+import { useStore } from '../store'
 
 interface Props {
   template: PromptTemplate
@@ -6,7 +7,10 @@ interface Props {
 }
 
 export default function PromptTemplateCard({ template, onUse }: Props) {
+  const uiLanguage = useStore((s) => s.uiLanguage)
   const tags = template.tags?.slice(0, 3) ?? []
+  const fallbackLabel = uiLanguage === 'en' ? 'Commercial creative prompt' : '商业创意 Prompt'
+  const useLabel = uiLanguage === 'en' ? 'Use this prompt' : '使用此 Prompt'
 
   return (
     <article className="group overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/[0.07] shadow-2xl shadow-black/10 backdrop-blur-xl transition-all hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.1]">
@@ -25,7 +29,7 @@ export default function PromptTemplateCard({ template, onUse }: Props) {
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center px-6 text-center text-sm font-semibold text-white/60">
-              Campaign-ready prompt
+              {fallbackLabel}
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-transparent to-transparent opacity-80" />
@@ -57,7 +61,7 @@ export default function PromptTemplateCard({ template, onUse }: Props) {
               ))}
             </div>
             <span className="shrink-0 rounded-full bg-gradient-to-r from-violet-400 to-cyan-300 px-3 py-1.5 text-xs font-bold text-slate-950 shadow-sm transition group-hover:shadow-cyan-300/20">
-              使用此 Prompt
+              {useLabel}
             </span>
           </div>
         </div>

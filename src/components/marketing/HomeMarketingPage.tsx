@@ -1,5 +1,10 @@
+import { useEffect, type FormEvent, useState } from 'react'
+import { homeMarketingCopy } from '../../lib/homeMarketingCopy'
+import { useStore } from '../../store'
 import type { PromptTemplate } from '../../types'
 import PromptTemplateCard from '../PromptTemplateCard'
+
+const knownHeroPrompts = Object.values(homeMarketingCopy).flatMap((copy) => copy.heroPrompts)
 
 interface Props {
   templates: PromptTemplate[]
@@ -15,74 +20,6 @@ interface Props {
   onOpenAgent: () => void
 }
 
-const heroPrompts = [
-  'Create a cinematic product shot for a matte black smart speaker on a glossy obsidian desk.',
-  'Generate a premium fashion campaign poster with violet neon, silver fabric, and bold negative space.',
-  'Design a cozy wabi-sabi interior scene with natural light, warm concrete, and editorial styling.',
-]
-
-const capabilityBadges = [
-  'Text to image',
-  'Image editing',
-  'Prompt templates',
-  'Agent workflows',
-]
-
-const stats = [
-  { value: '6+', label: 'Creative starter templates' },
-  { value: '3', label: 'Generation workflows' },
-  { value: 'Local', label: 'Private IndexedDB gallery' },
-]
-
-const features = [
-  {
-    title: 'Start from proven prompts',
-    description: 'Use curated commercial, poster, product, avatar, and concept prompts instead of starting from a blank page.',
-  },
-  {
-    title: 'Remix with references',
-    description: 'Bring images, masks, and previous outputs back into the flow for precise edits and visual iteration.',
-  },
-  {
-    title: 'Ship multi-step ideas',
-    description: 'Agent mode turns creative briefs into guided image tasks, so longer campaigns stay organized.',
-  },
-  {
-    title: 'Keep your gallery local',
-    description: 'Outputs, favorites, parameters, and revisions are organized in the browser without a backend account system.',
-  },
-]
-
-const workflow = [
-  ['01', 'Choose a direction', 'Pick a template or paste a campaign brief into the hero-style prompt surface.'],
-  ['02', 'Tune the creative', 'Adjust size, quality, references, masks, and provider settings before generating.'],
-  ['03', 'Generate and iterate', 'Review outputs in the gallery, reuse parameters, edit images, and favorite winners.'],
-]
-
-const useCases = ['Product hero shots', 'Social campaign visuals', 'Character concepts', 'Interior moodboards', 'Food ads', 'Profile avatars']
-
-function TemplatePreview({ template, index }: { template?: PromptTemplate; index: number }) {
-  const fallbackTitles = ['Product launch', 'Fashion poster', 'Concept art']
-
-  return (
-    <div className={`relative overflow-hidden rounded-[1.5rem] border border-white/15 bg-white/[0.06] shadow-2xl shadow-black/20 ${index === 1 ? 'mt-10' : ''}`}>
-      <div className="aspect-[4/5] bg-gradient-to-br from-violet-500/30 via-fuchsia-500/20 to-cyan-400/20">
-        {template?.coverImageUrl ? (
-          <img src={template.coverImageUrl} alt={template.title} className="h-full w-full object-cover" loading="lazy" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center p-6 text-center text-sm font-semibold text-white/65">
-            {template?.title ?? fallbackTitles[index]}
-          </div>
-        )}
-      </div>
-      <div className="absolute inset-x-3 bottom-3 rounded-2xl border border-white/15 bg-black/35 p-3 text-white shadow-lg backdrop-blur-xl">
-        <p className="line-clamp-1 text-sm font-semibold">{template?.title ?? fallbackTitles[index]}</p>
-        <p className="mt-1 line-clamp-1 text-xs text-white/65">{template?.category ?? 'AI creative prompt'}</p>
-      </div>
-    </div>
-  )
-}
-
 export default function HomeMarketingPage({
   templates,
   visibleTemplates,
@@ -96,7 +33,29 @@ export default function HomeMarketingPage({
   onOpenGallery,
   onOpenAgent,
 }: Props) {
-  const heroTemplates = templates.slice(0, 3)
+  const uiLanguage = useStore((s) => s.uiLanguage)
+  const copy = homeMarketingCopy[uiLanguage]
+  const [heroPrompt, setHeroPrompt] = useState(copy.heroPrompts[0])
+  const heroPromptReady = heroPrompt.trim().length > 0
+
+  useEffect(() => {
+    setHeroPrompt((current) => knownHeroPrompts.includes(current) ? copy.heroPrompts[0] : current)
+  }, [copy])
+
+  const handleHeroPromptSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const prompt = heroPrompt.trim()
+    if (!prompt) return
+
+    onUseTemplate({
+      id: `home-quick-start-${Date.now()}`,
+      title: copy.quickStartTemplateTitle,
+      description: copy.quickStartTemplateDescription,
+      prompt,
+      category: copy.quickStartTemplateCategory,
+      tags: copy.quickStartTemplateTags,
+    })
+  }
 
   return (
     <div className="relative -mx-4 overflow-hidden bg-slate-950 text-white sm:-mx-6 lg:-mx-8">
@@ -108,92 +67,99 @@ export default function HomeMarketingPage({
       </div>
 
       <div className="relative mx-auto max-w-7xl px-4 pb-20 pt-12 sm:px-6 lg:px-8 lg:pt-20">
-        <section className="grid items-center gap-10 lg:grid-cols-[1.02fr_0.98fr]">
-          <div className="max-w-3xl">
+        <section className="mx-auto max-w-5xl text-center">
+          <div className="mx-auto max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100 shadow-lg shadow-black/20 backdrop-blur-xl">
               <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.9)]" />
-              GPT Image Playground
+              {copy.badge}
             </div>
 
-            <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Turn prompts into campaign-ready images.
+            <h1 className="mt-6 text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
+              {copy.title}
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
-              从模板、参考图和 Agent 工作流开始，把产品图、海报、角色概念和社媒视觉快速推进到可交付状态。
+            <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+              {copy.subtitle}
             </p>
+          </div>
 
-            <div className="mt-8 overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.08] p-3 shadow-2xl shadow-fuchsia-950/30 backdrop-blur-2xl">
+          <form onSubmit={handleHeroPromptSubmit} className="mx-auto mt-8 max-w-4xl overflow-hidden rounded-[2rem] border border-white/15 bg-white/[0.08] p-3 text-left shadow-2xl shadow-fuchsia-950/30 backdrop-blur-2xl">
               <div className="rounded-[1.4rem] border border-white/10 bg-slate-950/80 p-4">
                 <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
                   <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-300" />
-                  <span className="ml-2">Prompt composer</span>
+                  <span className="ml-2">{copy.composerLabel}</span>
                 </div>
-                <p className="mt-4 text-sm leading-7 text-slate-200 sm:text-base">{heroPrompts[0]}</p>
+                <label htmlFor="home-hero-prompt" className="sr-only">{copy.promptLabel}</label>
+                <textarea
+                  id="home-hero-prompt"
+                  value={heroPrompt}
+                  onChange={(event) => setHeroPrompt(event.target.value)}
+                  rows={4}
+                  className="mt-4 min-h-32 w-full resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm leading-7 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-300/50 focus:bg-white/[0.07] focus:ring-4 focus:ring-cyan-300/10 sm:text-base"
+                  placeholder={copy.promptPlaceholder}
+                />
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500">{copy.examplesLabel}</span>
+                  {copy.heroPrompts.map((prompt, index) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => setHeroPrompt(prompt)}
+                      className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 text-xs text-slate-300 transition hover:border-cyan-300/35 hover:bg-cyan-300/10 hover:text-cyan-100"
+                    >
+                      {copy.exampleButton(index)}
+                    </button>
+                  ))}
+                </div>
                 <div className="mt-5 flex flex-wrap gap-2">
-                  {capabilityBadges.map((badge) => (
+                  {copy.capabilityBadges.map((badge) => (
                     <span key={badge} className="rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-xs text-slate-300">
                       {badge}
                     </span>
                   ))}
                 </div>
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                  <button
+                    type="submit"
+                    disabled={!heroPromptReady}
+                    className="rounded-full bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-300 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-fuchsia-500/25 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:scale-100"
+                  >
+                    {copy.submit}
+                  </button>
                   <button
                     type="button"
                     onClick={() => document.getElementById('prompt-template-studio')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                    className="rounded-full bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-300 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-fuchsia-500/25 transition hover:scale-[1.01]"
+                    className="rounded-full border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
                   >
-                    Start with templates
+                    {copy.templatesCta}
                   </button>
                   <button
                     type="button"
                     onClick={onOpenAgent}
                     className="rounded-full border border-white/15 bg-white/[0.06] px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
                   >
-                    Explore Agent mode
+                    {copy.agentCta}
                   </button>
                 </div>
               </div>
-            </div>
+          </form>
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              {stats.map((item) => (
+          <div className="mx-auto mt-8 grid max-w-4xl gap-3 sm:grid-cols-3">
+              {copy.stats.map((item) => (
                 <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.05] p-4 backdrop-blur-xl">
                   <p className="text-2xl font-black text-white">{item.value}</p>
                   <p className="mt-1 text-xs leading-5 text-slate-400">{item.label}</p>
                 </div>
               ))}
-            </div>
           </div>
-
-          <div className="relative min-h-[34rem]">
-            <div className="absolute inset-0 rounded-[2.5rem] border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/40 backdrop-blur-2xl" />
-            <div className="relative grid h-full grid-cols-3 gap-3 p-4 sm:gap-4 sm:p-5">
-              {[0, 1, 2].map((index) => (
-                <TemplatePreview key={index} template={heroTemplates[index]} index={index} />
-              ))}
-            </div>
-            <div className="absolute -bottom-4 left-6 right-6 rounded-[1.5rem] border border-white/15 bg-slate-950/85 p-4 shadow-2xl backdrop-blur-xl">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-semibold text-white">Creative pipeline ready</p>
-                  <p className="mt-1 text-xs text-slate-400">Template - Generate - Edit - Gallery</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={onOpenGallery}
-                  className="shrink-0 rounded-full bg-white px-4 py-2 text-xs font-bold text-slate-950 transition hover:bg-cyan-100"
-                >
-                  Open Gallery
-                </button>
-              </div>
-            </div>
-          </div>
+          <p className="mx-auto mt-3 max-w-2xl text-xs leading-5 text-slate-500">
+              {copy.backupNote}
+          </p>
         </section>
 
-        <section className="mt-24 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {features.map((feature) => (
+        <section className="mt-16 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {copy.features.map((feature) => (
             <article key={feature.title} className="rounded-[1.75rem] border border-white/10 bg-white/[0.05] p-6 backdrop-blur-xl transition hover:-translate-y-1 hover:bg-white/[0.08]">
               <div className="mb-5 h-10 w-10 rounded-2xl bg-gradient-to-br from-cyan-300/90 to-fuchsia-400/90 shadow-lg shadow-fuchsia-500/20" />
               <h2 className="text-lg font-bold text-white">{feature.title}</h2>
@@ -205,10 +171,10 @@ export default function HomeMarketingPage({
         <section id="prompt-template-studio" className="mt-24 scroll-mt-28 rounded-[2rem] border border-white/10 bg-white/[0.05] p-4 shadow-2xl shadow-black/20 backdrop-blur-xl sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">Template studio</p>
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Pick a launch-ready creative direction.</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">{copy.templateStudioLabel}</p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">{copy.templateStudioTitle}</h2>
               <p className="mt-3 text-sm leading-7 text-slate-400">
-                点击模板会保留现有生成流程：自动填入 prompt，并进入可继续微调的 Playground。
+                {copy.templateStudioDescription}
               </p>
             </div>
             <button
@@ -216,7 +182,7 @@ export default function HomeMarketingPage({
               onClick={onReload}
               className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/[0.06] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/[0.1]"
             >
-              Refresh templates
+              {copy.refreshTemplates}
             </button>
           </div>
 
@@ -240,7 +206,7 @@ export default function HomeMarketingPage({
                       : 'border border-white/10 bg-white/[0.05] text-slate-300 hover:bg-white/[0.1]'
                   }`}
                 >
-                  {category === 'all' ? '全部' : category}
+                  {category === 'all' ? copy.allCategory : category}
                 </button>
               )
             })}
@@ -267,21 +233,59 @@ export default function HomeMarketingPage({
             </div>
           ) : (
             <div className="mt-6 rounded-3xl border border-dashed border-white/15 bg-white/[0.04] px-6 py-12 text-center text-sm text-slate-400">
-              {templates.length === 0 ? '当前没有可用的 Prompt 模板。' : '当前分类下没有匹配的模板。'}
+              {templates.length === 0 ? copy.emptyAll : copy.emptyCategory}
             </div>
           )}
         </section>
 
+        <section className="mt-24 grid gap-8 rounded-[2rem] border border-cyan-300/15 bg-cyan-300/[0.04] p-5 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl sm:p-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">{copy.agentLabel}</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">{copy.agentTitle}</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-400">
+              {copy.agentDescription}
+            </p>
+            <button
+              type="button"
+              onClick={onOpenAgent}
+              className="mt-6 rounded-full bg-gradient-to-r from-cyan-300 to-fuchsia-300 px-6 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01]"
+            >
+              {copy.agentWorkspaceCta}
+            </button>
+          </div>
+          <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/70 p-4 shadow-2xl shadow-black/20">
+            <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{copy.agentBriefLabel}</p>
+              <p className="mt-3 text-sm leading-7 text-slate-200">
+                {copy.agentBrief}
+              </p>
+            </div>
+            <div className="mt-4 space-y-3">
+              {copy.agentSteps.map(([title, description], index) => (
+                <div key={title} className="grid grid-cols-[2.25rem_1fr] gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-300/15 text-sm font-black text-cyan-100">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-white">{title}</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">{description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="mt-24 grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-200">Workflow</p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">A creative system, not just a generator.</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-fuchsia-200">{copy.workflowLabel}</p>
+            <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">{copy.workflowTitle}</h2>
             <p className="mt-4 text-sm leading-7 text-slate-400">
-              参考 Manus 和 Canva 的营销结构，把核心生成能力包装成清晰的创作路径，同时保持现有工具效率。
+              {copy.workflowDescription}
             </p>
           </div>
           <div className="space-y-4">
-            {workflow.map(([step, title, description]) => (
+            {copy.workflow.map(([step, title, description]) => (
               <article key={step} className="grid gap-4 rounded-[1.5rem] border border-white/10 bg-white/[0.05] p-5 sm:grid-cols-[4rem_1fr]">
                 <div className="text-2xl font-black text-cyan-200">{step}</div>
                 <div>
@@ -296,19 +300,19 @@ export default function HomeMarketingPage({
         <section className="mt-24 rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/[0.1] to-white/[0.03] p-6 backdrop-blur-xl sm:p-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">Use cases</p>
-              <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">Built for marketing assets that need momentum.</h2>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-200">{copy.useCasesLabel}</p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">{copy.useCasesTitle}</h2>
             </div>
             <button
               type="button"
               onClick={onOpenGallery}
               className="rounded-full bg-white px-6 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-100"
             >
-              View generated gallery
+              {copy.viewGallery}
             </button>
           </div>
           <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {useCases.map((item) => (
+            {copy.useCases.map((item) => (
               <div key={item} className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-4 text-sm font-semibold text-slate-200">
                 {item}
               </div>

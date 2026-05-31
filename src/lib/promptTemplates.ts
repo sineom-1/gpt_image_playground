@@ -1,4 +1,4 @@
-import type { PromptTemplate, TaskParams } from '../types'
+import type { AppLanguage, PromptTemplate, TaskParams } from '../types'
 import { readRuntimeEnv } from './runtimeEnv'
 
 const DEFAULT_PROMPT_TEMPLATES_URL = '/api/prompt-templates'
@@ -75,6 +75,60 @@ export const MOCK_PROMPT_TEMPLATES: PromptTemplate[] = [
     sortOrder: 60,
   },
 ]
+
+const EN_MOCK_PROMPT_TEMPLATE_COPY: Record<string, Partial<Pick<PromptTemplate, 'title' | 'description' | 'prompt' | 'category' | 'tags'>>> = {
+  'mock-product-photography': {
+    title: 'Premium product photography',
+    description: 'For e-commerce hero images, website visuals, and product detail pages.',
+    prompt: 'Create premium commercial product photography for minimalist white wireless earbuds on a clean light gray background, with soft studio lighting, crisp reflections, a realistic high-end look, and an e-commerce hero image composition.',
+    category: 'Product photography',
+    tags: ['E-commerce', 'Studio lighting', 'Realistic'],
+  },
+  'mock-fashion-poster': {
+    title: 'Trend fashion poster',
+    description: 'Generate a brand campaign image ready for social distribution.',
+    prompt: 'Generate a futuristic fashion brand poster featuring a model in a silver techwear jacket standing on a neon city street, with strong blue and violet lighting, cinematic composition, and clear top space for headline copy.',
+    category: 'Poster design',
+    tags: ['Fashion', 'Neon', 'Brand'],
+  },
+  'mock-character-concept': {
+    title: 'Character concept design',
+    description: 'For game, animation, or IP character exploration.',
+    prompt: 'Design an original fantasy game character: a young forest guardian wearing light armor made of vines and leather, holding a glowing wooden staff, warm natural light, detailed half-body portrait, rich details, concept art style.',
+    category: 'Character design',
+    tags: ['Fantasy', 'Game', 'Concept art'],
+  },
+  'mock-food-ad': {
+    title: 'Food advertising image',
+    description: 'For restaurant menus and delivery platform displays.',
+    prompt: 'Create an appetizing burger advertising photo with melted cheese, juicy patty, fresh lettuce, a dark background, warm side lighting, shallow depth of field, and enough central negative space for marketing copy.',
+    category: 'Commercial ads',
+    tags: ['Food', 'Advertising', 'Photography'],
+  },
+  'mock-interior-design': {
+    title: 'Modern interior space',
+    description: 'Quickly generate renovation and interior mood references.',
+    prompt: 'Generate a modern wabi-sabi living room interior design render with beige microcement walls, a low sofa, wooden coffee table, floor-to-ceiling natural light, minimal premium styling, and realistic architectural photography texture.',
+    category: 'Interior design',
+    tags: ['Interior', 'Wabi-sabi', 'Realistic'],
+  },
+  'mock-avatar-illustration': {
+    title: 'Social avatar illustration',
+    description: 'Create a distinctive personal avatar style image.',
+    prompt: 'Generate a cute 3D cartoon avatar of a young Asian woman in a circular composition, soft pink-blue gradient background, big eyes, smiling expression, clean high-quality rendering, suitable as a social media profile image.',
+    category: 'Avatar illustration',
+    tags: ['Avatar', '3D', 'Cute'],
+  },
+}
+
+export function localizePromptTemplates(templates: PromptTemplate[], language: AppLanguage): PromptTemplate[] {
+  if (language === 'zh') return templates
+
+  return templates.map((template) => {
+    const copy = EN_MOCK_PROMPT_TEMPLATE_COPY[template.id]
+    return copy ? { ...template, ...copy } : template
+  })
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value))
